@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-feed
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-feed
+  template:
+    metadata:
+      labels:
+        app: backend-feed
+    spec:
+      volumes:
+        - name: aws-secret
+          secret:
+            secretName: aws-secret
+      containers:
+        - name: backend-feed
+          image: dipti20/udagram-api-feed
+          volumeMounts:
+            - name: aws-secret
+              readOnly: true
+              mountPath: "/root/.aws/"
+          env:
+            - name: NODE_OPTIONS
+              value: --max_old_space_size=4096
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: POSTGRES_HOST
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: env-config
+            - name: AWS_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: AWS_BUCKET
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: AWS_REGION
+            - name: AWS_PROFILE
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: AWS_PROFILE
+            - name: URL
+              valueFrom:
+                configMapKeyRef:
+                  name: env-config
+                  key: URL
+          envFrom:
+            - secretRef:
+                name: env-secret
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
